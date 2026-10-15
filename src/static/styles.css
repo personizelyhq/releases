@@ -310,3 +310,15 @@ body.embed .empty { margin: 0; padding: 32px 20px; }
 /* Same-day entries: show the date once */
 .entry.same-day .entry-date { visibility: hidden; }
 @media (max-width: 720px) { .entry.same-day .entry-date { display: none; } }
+
+/* Team preview */
+.preview-bar {
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 14%, var(--paper));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 30%, var(--paper));
+}
+.preview-bar a { color: var(--accent-text); font-weight: 600; }
+.draft.internal { border-style: solid; }

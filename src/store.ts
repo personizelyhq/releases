@@ -56,7 +56,7 @@ export class Store {
     const firstImport = this.known.size === 0
     const nowIso = now.toISOString()
     for (const e of entries) {
-      if (e.draft || this.known.has(e.slug)) continue
+      if (e.draft || e.internal || this.known.has(e.slug)) continue
       const dayStart = `${e.date}T00:00:00.000Z`
       const at = firstImport || dayStart > nowIso ? dayStart : nowIso
       this.stmt.publish.run(e.slug, at)

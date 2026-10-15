@@ -89,6 +89,8 @@ export type ResolvedConfig = z.output<typeof configSchema> & {
   dataDir: string
   /** From RELEASES_SECRET. Never read from the config file. */
   secret: string | null
+  /** From PREVIEW_TOKEN: lets your team see drafts and internal entries via /preview?token=... */
+  previewToken: string | null
   /** Folder the config was loaded relative to. */
   root: string
 }

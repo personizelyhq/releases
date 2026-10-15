@@ -89,7 +89,7 @@ describe('server', () => {
   let current: ReleasesApp | null = null
   afterEach(() => { current?.close(); current = null })
 
-  async function setup ({ secret = SECRET as string | null, config = {} } = {}) {
+  async function setup ({ secret = SECRET as string | null, config = {}, env = {} as Record<string, string> } = {}) {
     const dir = await tmp()
     await mkdir(join(dir, 'assets'))
     await writeFile(join(dir, 'assets', 'a.png'), 'png')
@@ -98,9 +98,10 @@ describe('server', () => {
     await writeFile(join(dir, '2026-09-02-quiet-fix.md'), md('title: Quiet fix\ntype: fixed\nannounce: false'))
     await writeFile(join(dir, '2026-09-03-draft.md'), md('title: Draft\ndraft: true'))
     await writeFile(join(dir, '2027-01-01-future.md'), md('title: Future'))
+    await writeFile(join(dir, '2026-09-04-team-only.md'), md('title: Team only\ninternal: true'))
 
     let clock = new Date('2026-10-15T10:00:00Z')
-    const cfg = await loadConfig(dir, secret ? { RELEASES_SECRET: secret } : {}, { dir, dataDir: ':memory:', ...config })
+    const cfg = await loadConfig(dir, { ...(secret ? { RELEASES_SECRET: secret } : {}), ...env }, { dir, dataDir: ':memory:', ...config })
     current = await createApp(cfg, { now: () => clock, logger: { info () {}, error () {} } })
     const { app, releases } = current
     return {
@@ -118,7 +119,8 @@ describe('server', () => {
     const home = await (await s.req('/')).text()
     expect(home.startsWith('<!doctype html>')).toBe(true)
     expect(home).toContain('September feature')
-    expect(home).not.toMatch(/Draft|Future/)
+    expect(home).not.toMatch(/Draft|Future|Team only/)
+    expect((await s.req('/team-only')).status).toBe(404)
     expect((await s.req('/sept')).status).toBe(200)
     expect((await s.req('/draft')).status).toBe(404)
     expect((await s.req('/future')).status).toBe(404)
@@ -214,5 +216,32 @@ describe('server', () => {
   it('back-dates entries on first import so a backfill does not flood badges', async () => {
     const s = await setup()
     expect(s.releases.store.publishedAt('sept')).toBe('2026-09-01T00:00:00.000Z')
+  })
+
+  it('team preview shows drafts and internal entries behind a cookie', async () => {
+    const token = 'p'.repeat(20)
+    const s = await setup({ env: { PREVIEW_TOKEN: token } })
+    expect((await s.req('/preview?token=wrong')).status).toBe(403)
+    const login = await s.req(`/preview?token=${token}`)
+    expect(login.status).toBe(302)
+    const cookie = login.headers.get('set-cookie')!.split(';')[0]!
+    expect(login.headers.get('set-cookie')).toMatch(/HttpOnly/i)
+    const res = await s.req('/', { headers: { Cookie: cookie } })
+    const html = await res.text()
+    expect(html).toMatch(/Team only/)
+    expect(html).toMatch(/Draft/)
+    expect(html).toMatch(/Exit preview/)
+    expect(res.headers.get('cache-control')).toBe('private, no-store')
+    expect((await s.req('/team-only', { headers: { Cookie: cookie } })).status).toBe(200)
+    expect((await s.req('/team-only', { headers: { Cookie: 'releases_preview=forged' } })).status).toBe(404)
+    // Internal entries never reach the feed, JSON or unread counts.
+    expect(await (await s.req('/feed.xml', { headers: { Cookie: cookie } })).text()).not.toMatch(/Team only/)
+    const auth = s.userAuth(signUserToken(SECRET, { sub: 'u', exp: s.nowSec() + 60, since: '2026-01-01' }))
+    expect(((await (await s.req('/api/me/unread', auth)).json()) as { unread: string[] }).unread).not.toContain('team-only')
+  })
+
+  it('preview is off without PREVIEW_TOKEN', async () => {
+    const s = await setup()
+    expect((await s.req('/preview?token=anything')).status).toBe(403)
   })
 })

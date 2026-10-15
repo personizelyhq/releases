@@ -38,8 +38,8 @@ export class Releases {
     this.store.syncPublished(this.repo.visible(), this.now())
   }
 
-  list (): Release[] {
-    return this.repo.visible()
+  list (preview?: boolean): Release[] {
+    return this.repo.visible(preview)
   }
 
   async reload (): Promise<number> {
@@ -49,7 +49,7 @@ export class Releases {
   /** `baseUrl` makes the returned `url`s absolute. */
   unreadFor (userKey: string, since?: string | null, baseUrl = ''): UnreadResult {
     const lastSeenAt = this.store.lastSeen(userKey, since, this.now())
-    const unread = this.list().filter(e => e.announce && !e.draft && (this.store.publishedAt(e.slug) ?? '') > lastSeenAt)
+    const unread = this.list().filter(e => e.announce && !e.draft && !e.internal && (this.store.publishedAt(e.slug) ?? '') > lastSeenAt)
     return {
       count: unread.length,
       unread: unread.map(e => e.slug),

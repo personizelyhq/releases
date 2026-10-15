@@ -20,6 +20,8 @@ export interface Release {
   /** Counts toward the unread badge. */
   announce: boolean
   draft: boolean
+  /** Only visible to your team (in `releases dev` and preview mode). Never counts as unread. */
+  internal: boolean
   order: number
   html: string
 }
@@ -42,6 +44,7 @@ const frontmatterSchema = z.object({
   summary: z.string().trim().optional(),
   announce: z.boolean().default(true),
   draft: z.boolean().default(false),
+  internal: z.boolean().default(false),
   order: z.number().default(0),
 })
 
@@ -80,6 +83,7 @@ export function parseRelease (filename: string, raw: string): Release {
     summary: f.summary ?? firstParagraph(body),
     announce: f.announce,
     draft: f.draft,
+    internal: f.internal,
     order: f.order,
     html: marked.parse(body, { async: false }),
   }

@@ -16,6 +16,8 @@ const Entry: FC<{ ctx: PageContext; entry: Release; single?: boolean; sameDay?: 
     <div class='entry-body'>
       <TypeLabel type={e.type} cfg={ctx.cfg} />
       {e.draft && <span class='draft'>Draft</span>}
+      {e.internal && <span class='draft internal'>Internal</span>}
+      {!e.draft && !e.internal && e.date > new Date().toISOString().slice(0, 10) && <span class='draft'>Scheduled</span>}
       {single
         ? <h1 class='entry-title'>{e.title}</h1>
         : <h3 class='entry-title'><a href={`/${e.slug}`}>{e.title}</a></h3>}

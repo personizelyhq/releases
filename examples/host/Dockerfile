@@ -3,7 +3,7 @@
 # set RELEASES_SECRET, PUBLIC_URL, FRAME_ANCESTORS, domain releases.personizely.net.
 FROM node:22-alpine
 
-ARG RELEASES_VERSION=0.2.0
+ARG RELEASES_VERSION=0.3.0
 RUN npm install -g @personizely/releases@${RELEASES_VERSION} && npm cache clean --force
 
 WORKDIR /app

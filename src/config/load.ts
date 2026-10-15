@@ -34,6 +34,7 @@ export async function loadConfig (cwd = process.cwd(), env: Env = process.env, o
   if (env.ALLOWED_ORIGINS) merged.allowedOrigins = splitList(env.ALLOWED_ORIGINS)
   if (env.FRAME_ANCESTORS) merged.frameAncestors = splitList(env.FRAME_ANCESTORS)
   if ('secret' in merged) throw new ConfigError('Do not put the secret in the config file. Set RELEASES_SECRET in the environment.')
+  if ('previewToken' in merged) throw new ConfigError('Do not put the preview token in the config file. Set PREVIEW_TOKEN in the environment.')
 
   const parsed = configSchema.safeParse(merged)
   if (!parsed.success) {
@@ -41,6 +42,8 @@ export async function loadConfig (cwd = process.cwd(), env: Env = process.env, o
   }
 
   const secret = env.RELEASES_SECRET || null
+  const previewToken = env.PREVIEW_TOKEN || null
+  if (previewToken && previewToken.length < 16) throw new ConfigError('PREVIEW_TOKEN must be at least 16 characters.')
   if (secret && secret.length < 32) throw new ConfigError('RELEASES_SECRET must be at least 32 characters. Generate one with: npx releases secret')
 
   // Paths in the config file are relative to the file; paths from env or flags to cwd.
@@ -52,6 +55,7 @@ export async function loadConfig (cwd = process.cwd(), env: Env = process.env, o
     dir: resolve(dirBase, parsed.data.dir),
     dataDir: parsed.data.dataDir === ':memory:' ? ':memory:' : resolve(dataBase, parsed.data.dataDir),
     secret,
+    previewToken,
     root,
   }
 }

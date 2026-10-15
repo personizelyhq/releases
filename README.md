@@ -24,6 +24,7 @@ npx @personizely/releases dev      # http://localhost:3000
 - [Quick start](#quick-start)
 - [Writing releases](#writing-releases)
 - [Configuration](#configuration)
+- [Team preview](#team-preview)
 - [In-app panel and unread badge](#in-app-panel-and-unread-badge)
 - [User tokens](#user-tokens)
 - [API](#api)
@@ -84,7 +85,8 @@ Reports now show **profit per visitor** for every variant.
 | `image` | none | Shown above the body. Paths like `assets/x.png` resolve to `releases/assets/`. |
 | `summary` | first paragraph | Shown in the in-app panel. |
 | `announce` | `true` | Only announced entries count as unread. Use `false` for small fixes and backfilled history. |
-| `draft` | `false` | Drafts only appear in `releases dev`. |
+| `draft` | `false` | Drafts only appear in `releases dev` and team preview. |
+| `internal` | `false` | For your team only: shown in `releases dev` and team preview, never on the public page, feed, panel or unread count. Good for infrastructure work, onboarding tweaks and other changes customers don't need to read about. |
 | `order` | `0` | Higher shows first among entries from the same day. |
 
 Bodies are GitHub-flavored Markdown. Images can live in `releases/assets/` or anywhere on the web.
@@ -150,6 +152,17 @@ Runtime settings come from the environment, which overrides the file:
 | `PUBLIC_URL` | from the request | Same as `url`. |
 | `FRAME_ANCESTORS` | `*` | Who may embed the panel, e.g. `https://app.example.com`. Set it in production. |
 | `ALLOWED_ORIGINS` | `*` | CORS for the browser API. User tokens travel in a header, never a cookie, so `*` is safe. |
+| `PREVIEW_TOKEN` | none | Turns on [team preview](#team-preview). At least 16 characters. |
+
+### Team preview
+
+Set `PREVIEW_TOKEN` and share this link with your team:
+
+```
+https://releases.example.com/preview?token=<PREVIEW_TOKEN>
+```
+
+It sets a 30-day cookie in their browser. While it is set, they see drafts, internal entries and scheduled entries on the live site, each with a label, plus a banner with an exit link. Those responses are never cached. Everyone else, the RSS feed, the JSON feed, the in-app panel and the unread counts only ever see published entries.
 
 ## In-app panel and unread badge
 
@@ -248,6 +261,7 @@ The API is off until `RELEASES_SECRET` is set. Public routes need no auth.
 | `GET /feed.xml` | | RSS. |
 | `GET /releases.json` | | All published entries with rendered HTML. CORS open. |
 | `GET /client.js` | | The browser client as an ES module. |
+| `GET /preview?token=` | preview token | Turns on team preview in this browser. `/preview/exit` turns it off. |
 | `GET /health` | | |
 | `GET /api/me/unread` | user token | `{ count, unread, latest, lastSeenAt }` |
 | `POST /api/me/seen` | user token | Mark everything seen. |
@@ -263,7 +277,7 @@ The server needs Node 22.13+, your `releases/` folder, and a persistent director
 
 ```dockerfile
 FROM node:22-alpine
-RUN npm install -g @personizely/releases@0.2
+RUN npm install -g @personizely/releases@0.3
 WORKDIR /app
 COPY releases ./releases
 ENV NODE_ENV=production PORT=3000 DATA_DIR=/data

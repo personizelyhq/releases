@@ -11,6 +11,10 @@ export interface PageContext {
   baseUrl: string
   /** Inject the live-reload client (releases dev). */
   live: boolean
+  /** Showing drafts, internal and scheduled entries. */
+  preview: boolean
+  /** Preview through the team cookie (not dev): show the banner with an exit link. */
+  teamPreview: boolean
 }
 
 interface LayoutProps {
@@ -51,6 +55,11 @@ export const Layout: FC<LayoutProps> = ({ ctx, title, description, path, image, 
         <style dangerouslySetInnerHTML={{ __html: themeCss(cfg) + `:root{--logo-h:${cfg.logoHeight}px}` }} />
       </head>
       <body class={bodyClass}>
+        {ctx.teamPreview && (
+          <div class='preview-bar' role='status'>
+            Preview: drafts and internal entries are visible to you only. <a href='/preview/exit'>Exit preview</a>
+          </div>
+        )}
         {children}
         {ctx.live && <script dangerouslySetInnerHTML={{ __html: "new EventSource('/_releases/live').onmessage=()=>location.reload()" }} />}
       </body>

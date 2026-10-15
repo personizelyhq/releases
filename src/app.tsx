@@ -11,6 +11,9 @@ import { Repository } from './content/repository.js'
 import { Releases } from './releases.js'
 import { Store } from './store.js'
 import { CODE_DIR, STATIC_DIR } from './assets.js'
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
+import { createHmac } from 'node:crypto'
+import { safeEqual } from './auth.js'
 import { apiRoutes } from './routes/api.js'
 import { rssFeed } from './views/feed.js'
 import type { PageContext } from './views/layout.js'
@@ -67,10 +70,34 @@ export async function createApp (cfg: ResolvedConfig, opts: AppOptions = {}): Pr
 
   const app = new Hono<{ Variables: { page: PageContext } }>()
 
+  // Team preview: /preview?token=PREVIEW_TOKEN sets a cookie that shows drafts and internal entries.
+  const PREVIEW_COOKIE = 'releases_preview'
+  const previewSig = cfg.previewToken ? createHmac('sha256', cfg.previewToken).update('releases-preview').digest('base64url') : null
+  const hasPreviewCookie = (c: Context) => {
+    const v = previewSig ? getCookie(c, PREVIEW_COOKIE) : undefined
+    return !!v && safeEqual(v, previewSig!)
+  }
+
   app.use('*', async (c, next) => {
     releases.sync()
-    c.set('page', { cfg, baseUrl: baseUrl(c.req.url, c.req.raw.headers), live: dev })
+    const teamPreview = !dev && hasPreviewCookie(c)
+    c.set('page', { cfg, baseUrl: baseUrl(c.req.url, c.req.raw.headers), live: dev, preview: dev || teamPreview, teamPreview })
     await next()
+    if (teamPreview) c.header('Cache-Control', 'private, no-store')
+    if (previewSig) c.header('Vary', 'Cookie', { append: true })
+  })
+
+  app.get('/preview', c => {
+    const token = c.req.query('token') ?? ''
+    if (!cfg.previewToken || !safeEqual(token, cfg.previewToken)) return c.text('Preview is not enabled, or the token is wrong.', 403)
+    const secure = c.var.page.baseUrl.startsWith('https:')
+    setCookie(c, PREVIEW_COOKIE, previewSig!, { httpOnly: true, secure, sameSite: 'Lax', path: '/', maxAge: 60 * 60 * 24 * 30 })
+    c.header('Referrer-Policy', 'no-referrer')
+    return c.redirect('/', 302)
+  })
+  app.get('/preview/exit', c => {
+    deleteCookie(c, PREVIEW_COOKIE, { path: '/' })
+    return c.redirect('/', 302)
   })
 
   app.onError((err, c) => {
@@ -129,11 +156,11 @@ export async function createApp (cfg: ResolvedConfig, opts: AppOptions = {}): Pr
   app.get('/', c => {
     const t = c.req.query('type')
     const type = TYPES.includes(t as ReleaseType) ? (t as ReleaseType) : null
-    return page(c, <ListPage ctx={c.var.page} entries={releases.list()} type={type} />)
+    return page(c, <ListPage ctx={c.var.page} entries={releases.list(c.var.page.preview)} type={type} />)
   })
 
   app.get('/:slug{[a-z0-9][a-z0-9-]*}', c => {
-    const found = repo.find(c.req.param('slug'))
+    const found = repo.find(c.req.param('slug'), c.var.page.preview)
     if (!found) return page(c, <NotFoundPage ctx={c.var.page} />, 404)
     return page(c, <EntryPage ctx={c.var.page} {...found} />)
   })
@@ -149,7 +176,7 @@ export async function createApp (cfg: ResolvedConfig, opts: AppOptions = {}): Pr
   function page (c: Context, node: JSX.Element, status: 200 | 404 = 200) {
     c.header('X-Content-Type-Options', 'nosniff')
     if (!c.res.headers.has('Content-Security-Policy')) c.header('Content-Security-Policy', "frame-ancestors 'none'")
-    c.header('Cache-Control', dev ? 'no-cache' : 'public, max-age=60')
+    if (!c.res.headers.has('Cache-Control')) c.header('Cache-Control', dev ? 'no-cache' : 'public, max-age=60')
     return c.html(html`<!doctype html>${node}`, status)
   }
 }

@@ -64,15 +64,18 @@ export class Repository {
     return this.entries.length
   }
 
-  /** Published entries: not drafts, not scheduled for a later day (all of them in preview). */
-  visible (): Release[] {
-    if (this.preview) return this.entries
+  /**
+   * Public entries: not drafts, not internal, not scheduled for a later day.
+   * With `preview` (dev, or a team member in preview mode) everything is returned.
+   */
+  visible (preview = this.preview): Release[] {
+    if (preview) return this.entries
     const today = this.now().toISOString().slice(0, 10)
-    return this.entries.filter(e => !e.draft && e.date <= today)
+    return this.entries.filter(e => !e.draft && !e.internal && e.date <= today)
   }
 
-  find (slug: string): { entry: Release; newer?: Release; older?: Release } | null {
-    const list = this.visible()
+  find (slug: string, preview = this.preview): { entry: Release; newer?: Release; older?: Release } | null {
+    const list = this.visible(preview)
     const i = list.findIndex(e => e.slug === slug)
     if (i === -1) return null
     return { entry: list[i]!, newer: list[i - 1], older: list[i + 1] }
