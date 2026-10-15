@@ -15,6 +15,7 @@ Published npm package: release notes from Markdown files, served as a public cha
 - `src/app.tsx` the Hono app. `src/views/` JSX pages and RSS. `src/theme.ts` config to CSS variables.
 - `src/static/` CSS and the embed script, copied to `dist/static/` by `scripts/postbuild.mjs` (which also writes `dist/schema.json`).
 - `src/client.ts` browser client (no deps, no Node APIs). `src/cli.ts` the `releases` binary.
+- `src/templates/release-notes-skill.md` the Claude Code skill `releases skill` installs; copied to `dist/templates/` on build.
 
 ## Rules
 - Keep `src/` generic: no Personizely content or URLs. Personizely config and entries live in the backend repo.

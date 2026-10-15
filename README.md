@@ -344,6 +344,7 @@ releases new "Title"         Scaffold an entry  [--type new|improved|fixed] [--d
 releases check               Validate config and entries (CI)
 releases token <userId>      Print a test user token  [--ttl seconds]
 releases secret              Generate a RELEASES_SECRET
+releases skill               Add a release-notes skill for Claude Code  [--force]
 
 --cwd <path>  --dir <path>  --port <n>
 ```
@@ -361,7 +362,7 @@ const { app } = await createApp(await loadConfig())
 
 ## FAQ
 
-**Can an AI write the entries?** Yes, and that is the point of keeping them in Git. Ask your coding assistant to read the commits since the newest file in `releases/` and draft entries with `npx releases new`. A ready-made Claude Code skill is in [`examples/skill`](examples/skill/release-notes/SKILL.md).
+**Can an AI write the entries?** Yes, and that is the point of keeping them in Git. Run `npx releases skill` to add a [release-notes skill](src/templates/release-notes-skill.md) for Claude Code to `.claude/skills/`. Fill in its placeholders (your repos, issue tracker, local app URL), then ask "write release notes for what we shipped since June". It reads the git history and your tracker, checks diffs for exact details, proposes what deserves a note, writes drafts with `announce` set sensibly, takes screenshots with demo data, and hands everything back for review.
 
 **Is the Markdown sanitized?** No. Entries come from your repository and are trusted like the rest of your code. Do not feed it user-submitted content.
 

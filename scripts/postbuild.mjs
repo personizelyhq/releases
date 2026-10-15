@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { configSchema } from '../dist/config/schema.js'
 
 await cp('src/static', 'dist/static', { recursive: true })
+await cp('src/templates', 'dist/templates', { recursive: true })
 await chmod('dist/cli.js', 0o755)
 
 const schema = z.toJSONSchema(configSchema, { io: 'input', unrepresentable: 'any' })

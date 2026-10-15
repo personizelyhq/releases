@@ -29,6 +29,7 @@ Usage
   releases check               Validate config and every entry; exits 1 on errors (use in CI)
   releases token <userId>      Print a test user token (needs RELEASES_SECRET)  [--ttl seconds]
   releases secret              Print a random value for RELEASES_SECRET
+  releases skill               Add a release-notes skill for Claude Code to .claude/skills/  [--force]
 
 Options
   --cwd <path>    Project folder (default: current folder)
@@ -52,6 +53,7 @@ const { values, positionals } = parseArgs({
     type: { type: 'string', default: 'new' },
     date: { type: 'string' },
     ttl: { type: 'string', default: '3600' },
+    force: { type: 'boolean', default: false },
     help: { type: 'boolean', short: 'h' },
   },
 })
@@ -135,6 +137,17 @@ try {
       if (!cfg.secret) throw new Error('Set RELEASES_SECRET first')
       if (!rest[0]) throw new Error('Usage: releases token <userId>')
       console.log(signUserToken(cfg.secret, { sub: rest[0], exp: Math.floor(Date.now() / 1000) + Number(values.ttl) }))
+      break
+    }
+
+    case 'skill': {
+      const { readFile } = await import('node:fs/promises')
+      const template = await readFile(new URL('./templates/release-notes-skill.md', import.meta.url), 'utf8')
+      const target = join(cwd, '.claude', 'skills', 'release-notes', 'SKILL.md')
+      if (existsSync(target) && !values.force) throw new Error(`${relative(process.cwd(), target)} already exists. Use --force to overwrite it.`)
+      await mkdir(join(target, '..'), { recursive: true })
+      await writeFile(target, template)
+      console.log(`Created ${relative(process.cwd(), target)}. Fill in the <ANGLE BRACKET> placeholders for your project.`)
       break
     }
 
