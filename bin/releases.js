@@ -5,6 +5,13 @@ import { join, relative } from 'node:path'
 import { parseArgs } from 'node:util'
 import { randomBytes } from 'node:crypto'
 
+const [major, minor] = process.versions.node.split('.').map(Number)
+if (major < 22 || (major === 22 && minor < 13) || (major === 23 && minor < 4)) {
+  console.error(`@personizely/releases needs Node 22.13 or newer (it uses the built-in node:sqlite). You are running ${process.version}.`)
+  console.error('With nvm: nvm install 22 && nvm use 22')
+  process.exit(1)
+}
+
 // node:sqlite prints an ExperimentalWarning on Node 22; it is stable enough for one small table.
 const emitWarning = process.emitWarning
 process.emitWarning = (w, ...a) => (String(w).includes('SQLite') ? undefined : emitWarning.call(process, w, ...a))
