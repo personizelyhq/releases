@@ -16,6 +16,8 @@ export interface Release {
   tags: string[]
   /** Public URL path or absolute URL. */
   image: string | null
+  /** Intrinsic size of a local hero image, filled in by the repository. */
+  imageSize: { width: number; height: number } | null
   summary: string
   /** Counts toward the unread badge. */
   announce: boolean
@@ -80,6 +82,7 @@ export function parseRelease (filename: string, raw: string): Release {
     type: f.type,
     tags: f.tags,
     image: f.image ? assetUrl(f.image) : null,
+    imageSize: null,
     summary: f.summary ?? firstParagraph(body),
     announce: f.announce,
     draft: f.draft,

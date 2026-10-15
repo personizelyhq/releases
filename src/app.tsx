@@ -11,6 +11,9 @@ import { Repository } from './content/repository.js'
 import { Releases } from './releases.js'
 import { Store } from './store.js'
 import { CODE_DIR, STATIC_DIR } from './assets.js'
+import { resolveSiteAssets } from './config/site-assets.js'
+import { faviconSvg, iconLinks, robots, sitemap } from './seo.js'
+import { dirname, basename } from 'node:path'
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import { createHmac } from 'node:crypto'
 import { safeEqual } from './auth.js'
@@ -48,7 +51,8 @@ const MIME: Record<string, string> = {
   '.webm': 'video/webm',
 }
 
-export async function createApp (cfg: ResolvedConfig, opts: AppOptions = {}): Promise<ReleasesApp> {
+export async function createApp (inputCfg: ResolvedConfig, opts: AppOptions = {}): Promise<ReleasesApp> {
+  const { cfg, files: siteFiles } = resolveSiteAssets(inputCfg)
   const dev = opts.dev ?? false
   const now = opts.now ?? (() => new Date())
   const log = opts.logger ?? console
@@ -119,6 +123,23 @@ export async function createApp (cfg: ResolvedConfig, opts: AppOptions = {}): Pr
   }
   // The browser client as a plain ES module, for pages without a bundler.
   app.get('/client.js', c => serveFile(c, CODE_DIR, 'client.js', 'public, max-age=300', { 'Access-Control-Allow-Origin': '*' }))
+  // Icons from the config, the default favicon, and what search engines ask for.
+  app.get('/_site/:file', c => {
+    const file = siteFiles.get(c.req.path)
+    return file ? serveFile(c, dirname(file), basename(file), dev ? 'no-cache' : 'public, max-age=86400') : c.notFound()
+  })
+  app.get('/_releases/favicon.svg', c => c.body(faviconSvg(cfg), 200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' }))
+  app.get('/favicon.ico', c => {
+    const { favicon } = iconLinks(cfg)
+    if (/^https?:\/\//.test(favicon)) return c.redirect(favicon, 301)
+    const local = siteFiles.get(favicon)
+    if (local) return serveFile(c, dirname(local), basename(local), 'public, max-age=86400')
+    if (favicon.startsWith('/assets/')) return serveFile(c, join(cfg.dir, 'assets'), favicon.slice('/assets/'.length), 'public, max-age=86400')
+    return c.body(faviconSvg(cfg), 200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' })
+  })
+  app.get('/robots.txt', c => c.text(robots(cfg, c.var.page.baseUrl), 200, { 'Cache-Control': 'public, max-age=3600' }))
+  app.get('/sitemap.xml', c => c.body(sitemap(cfg, c.var.page.baseUrl, releases.list()), 200, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }))
+
   app.get('/_releases/:file', c => serveFile(c, STATIC_DIR, c.req.param('file'), dev ? 'no-cache' : 'public, max-age=31536000, immutable'))
   app.get('/assets/*', c => serveFile(c, join(cfg.dir, 'assets'), c.req.path.slice('/assets/'.length), dev ? 'no-cache' : 'public, max-age=86400'))
 
@@ -150,13 +171,23 @@ export async function createApp (cfg: ResolvedConfig, opts: AppOptions = {}): Pr
     const theme = t === 'light' || t === 'dark' ? t : 'auto'
     c.header('Content-Security-Policy', `frame-ancestors ${cfg.frameAncestors.join(' ')}`)
     c.header('Referrer-Policy', 'no-referrer')
+    c.header('X-Robots-Tag', 'noindex')
     return page(c, <EmbedPage ctx={c.var.page} entries={releases.list()} theme={theme} />)
   })
 
-  app.get('/', c => {
+  const listPage = (c: Context<{ Variables: { page: PageContext } }>, n: number) => {
     const t = c.req.query('type')
     const type = TYPES.includes(t as ReleaseType) ? (t as ReleaseType) : null
-    return page(c, <ListPage ctx={c.var.page} entries={releases.list(c.var.page.preview)} type={type} />)
+    const entries = releases.list(c.var.page.preview)
+    const total = type ? entries.filter(e => e.type === type).length : entries.length
+    if (n < 1 || (n > 1 && (n - 1) * cfg.perPage >= total)) return page(c, <NotFoundPage ctx={c.var.page} />, 404)
+    return page(c, <ListPage ctx={c.var.page} entries={entries} type={type} page={n} />)
+  }
+  app.get('/', c => listPage(c, Number(c.req.query('page') ?? 1) || 1))
+  app.get('/page/:n{[0-9]+}', c => {
+    const n = Number(c.req.param('n'))
+    if (n === 1) return c.redirect('/', 301)
+    return listPage(c, n)
   })
 
   app.get('/:slug{[a-z0-9][a-z0-9-]*}', c => {

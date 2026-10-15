@@ -57,6 +57,7 @@ export async function loadConfig (cwd = process.cwd(), env: Env = process.env, o
     secret,
     previewToken,
     root,
+    configDir: found?.root ?? cwd,
   }
 }
 

@@ -1,6 +1,7 @@
 import { watch, type FSWatcher } from 'node:fs'
-import { readdir, readFile } from 'node:fs/promises'
-import { extname, join } from 'node:path'
+import { readdir, readFile, stat } from 'node:fs/promises'
+import { extname, join, normalize, sep } from 'node:path'
+import { imageSizeFromFile } from 'image-size/fromFile'
 import { compareReleases, parseRelease, type Release } from './parse.js'
 
 export class ReleaseLoadError extends AggregateError {}
@@ -33,7 +34,42 @@ export async function loadReleases (dir: string): Promise<Release[]> {
   if (errors.length) {
     throw new ReleaseLoadError(errors, `Invalid release files:\n  ${errors.map(e => e.message).join('\n  ')}`)
   }
+  await addImageSizes(dir, entries)
   return entries.sort(compareReleases)
+}
+
+type Size = { width: number; height: number }
+const sizeCache = new Map<string, { mtime: number; size: Size | null }>()
+
+/** Intrinsic size of a file in releases/assets/, cached by mtime. Null for remote or unreadable images. */
+async function localImageSize (dir: string, src: string): Promise<Size | null> {
+  if (!src.startsWith('/assets/')) return null
+  const root = normalize(join(dir, 'assets') + sep)
+  const file = normalize(join(dir, 'assets', decodeURIComponent(src.slice('/assets/'.length))))
+  if (!file.startsWith(root)) return null
+  try {
+    const { mtimeMs } = await stat(file)
+    const hit = sizeCache.get(file)
+    if (hit?.mtime === mtimeMs) return hit.size
+    const r = await imageSizeFromFile(file)
+    const size = r.width && r.height ? { width: r.width, height: r.height } : null
+    sizeCache.set(file, { mtime: mtimeMs, size })
+    return size
+  } catch {
+    return null
+  }
+}
+
+/** Width/height on local images prevent layout shift while they load (Core Web Vitals). */
+async function addImageSizes (dir: string, entries: Release[]): Promise<void> {
+  for (const e of entries) {
+    if (e.image) e.imageSize = await localImageSize(dir, e.image)
+    const tags = [...e.html.matchAll(/<img src="(\/assets\/[^"]+)"(?![^>]*\swidth=)/g)]
+    for (const [tag, src] of tags) {
+      const size = await localImageSize(dir, src!)
+      if (size) e.html = e.html.replace(tag, `${tag} width="${size.width}" height="${size.height}"`)
+    }
+  }
 }
 
 export interface RepositoryOptions {

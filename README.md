@@ -28,6 +28,7 @@ npx @personizely/releases dev      # http://localhost:3000
 - [Writing releases](#writing-releases)
 - [Configuration](#configuration)
 - [Team preview](#team-preview)
+- [SEO](#seo)
 - [In-app panel and unread badge](#in-app-panel-and-unread-badge)
 - [User tokens](#user-tokens)
 - [API](#api)
@@ -107,7 +108,8 @@ Zero config works. To brand it, add `releases.config.json` inside `releases/`, o
   "description": "New features, improvements and fixes in Personizely.",
   "website": { "label": "personizely.net", "href": "https://www.personizely.net" },
   "logo": { "light": "assets/logo.svg", "dark": "assets/logo-dark.svg" },
-  "favicon": "assets/favicon.png",
+  "favicon": "../public/favicon.ico",
+  "appleTouchIcon": "../public/img/apple-touch-icon.png",
   "font": "Inter",
   "colors": {
     "accent": "#2f54eb",
@@ -116,6 +118,12 @@ Zero config works. To brand it, add `releases.config.json` inside `releases/`, o
   "labels": { "fixed": "Bug fix" }
 }
 ```
+
+**Images and icons** (`logo`, `favicon`, `appleTouchIcon`, `ogImage`) take any of:
+
+- a URL, e.g. `https://app.example.com/favicon.png`;
+- a file in `releases/assets/`, e.g. `assets/logo.svg`;
+- **a path to any file on disk, relative to the config file**, e.g. `../public/favicon.ico`. The server reads it and serves it itself, so your changelog uses your app's own favicon in dev and in production without depending on the app being up. A missing file fails at startup.
 
 The `$schema` line gives you autocomplete and validation in VS Code and JetBrains. In TypeScript:
 
@@ -138,7 +146,12 @@ export default defineConfig({
 | `url` | from the request | Public base URL. Detected from `Host` and `X-Forwarded-*`, so it works behind Coolify, Fly, Render or nginx without setting it. Set it if you cache pages on a CDN. |
 | `website` | none | `{ label, href }` link back to your product. |
 | `logo` | name as text | Path or URL, or `{ light, dark }`. `logoHeight` sets its height (default 28). |
-| `favicon`, `ogImage` | none | |
+| `favicon` | generated | A path or URL. Defaults to an icon in your accent color. |
+| `appleTouchIcon`, `ogImage` | none | A path or URL. `ogImage` is the default social preview (1200x630). |
+| `twitter` | none | Your handle, for `twitter:site`. |
+| `lang` | `en` | Page language, for `<html lang>` and `og:locale`. |
+| `perPage` | `20` | Entries per page on the public changelog. |
+| `noindex` | `false` | Keep the whole site out of search engines, e.g. on staging. |
 | `font` | system font | A Google Fonts family name such as `"Inter"`, or `{ family, url }` for any other font. |
 | `colors` | | `accent`, `background`, `text`, `muted`, `border`, and per-type `new`, `improved`, `fixed`. Each takes one color or `{ light, dark }`. Dark mode follows the visitor's system setting. |
 | `labels` | `New feature`, `Improvement`, `Fix` | Wording for each type. |
@@ -166,6 +179,19 @@ https://releases.example.com/preview?token=<PREVIEW_TOKEN>
 ```
 
 It sets a 30-day cookie in their browser. While it is set, they see drafts, internal entries and scheduled entries on the live site, each with a label, plus a banner with an exit link. Those responses are never cached. Everyone else, the RSS feed, the JSON feed, the in-app panel and the unread counts only ever see published entries.
+
+### SEO
+
+Every page is server-rendered HTML with no client-side JavaScript needed to read it. Out of the box:
+
+- A unique `<title>`, meta description and canonical URL per page, with Open Graph and Twitter cards. Entries are `og:type=article` with their publish date and hero image.
+- `schema.org` structured data: `Blog` on list pages, and `BlogPosting` plus breadcrumbs on each entry.
+- `/sitemap.xml` with every published entry and its date, and a `/robots.txt` that points to it.
+- Crawlable pagination at `/page/2`, `/page/3` and so on, with `rel="prev"`/`rel="next"`.
+- `noindex` on filtered lists, the in-app panel, 404s, team preview and draft or internal entries, so only canonical pages get indexed.
+- `width`/`height` on local images to avoid layout shift, eager loading for the first image and lazy loading for the rest, and descriptive `alt` text on hero images.
+
+Set `url` (or `PUBLIC_URL`) in production so canonical URLs never depend on a proxy header.
 
 ## In-app panel and unread badge
 
@@ -261,7 +287,10 @@ The API is off until `RELEASES_SECRET` is set. Public routes need no auth.
 | `GET /` | | Changelog. `?type=new\|improved\|fixed` filters. |
 | `GET /:slug` | | One entry. |
 | `GET /embed` | | The in-app panel page. `?theme=light\|dark\|auto`, user token in the hash `#token=...`. |
+| `GET /page/:n` | | Older pages of the changelog. |
 | `GET /feed.xml` | | RSS. |
+| `GET /sitemap.xml`, `GET /robots.txt` | | For search engines. |
+| `GET /favicon.ico` | | Your configured favicon, or the generated one. |
 | `GET /releases.json` | | All published entries with rendered HTML. CORS open. |
 | `GET /client.js` | | The browser client as an ES module. |
 | `GET /preview?token=` | preview token | Turns on team preview in this browser. `/preview/exit` turns it off. |
@@ -280,9 +309,11 @@ The server needs Node 22.13+, your `releases/` folder, and a persistent director
 
 ```dockerfile
 FROM node:22-alpine
-RUN npm install -g @personizely/releases@0.3
+RUN npm install -g @personizely/releases@0.4
 WORKDIR /app
 COPY releases ./releases
+# Files the config points to outside releases/, at the same relative paths
+COPY public/favicon.ico ./public/favicon.ico
 ENV NODE_ENV=production PORT=3000 DATA_DIR=/data
 RUN mkdir -p /data && chown node:node /data
 VOLUME /data

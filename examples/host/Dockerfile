@@ -3,11 +3,14 @@
 # set RELEASES_SECRET, PUBLIC_URL, FRAME_ANCESTORS, domain releases.personizely.net.
 FROM node:22-alpine
 
-ARG RELEASES_VERSION=0.3.0
+ARG RELEASES_VERSION=0.4.0
 RUN npm install -g @personizely/releases@${RELEASES_VERSION} && npm cache clean --force
 
 WORKDIR /app
 COPY releases ./releases
+# Icons the releases config reuses from the app (paths relative to releases/)
+COPY public/favicon.ico ./public/favicon.ico
+COPY public/img/apple-touch-icon.png ./public/img/apple-touch-icon.png
 
 ENV NODE_ENV=production \
     PORT=3000 \

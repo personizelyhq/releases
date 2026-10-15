@@ -27,8 +27,11 @@ export const configSchema = z.object({
     .optional()
     .describe('Shown in the header instead of the name. Use { light, dark } for separate dark-mode artwork'),
   logoHeight: z.number().int().min(12).max(64).default(28),
-  favicon: asset.optional(),
-  ogImage: asset.optional().describe('Default social preview image'),
+  favicon: asset.optional().describe('Path in the releases folder or a URL, e.g. "https://app.example.com/favicon.png". Defaults to a generated icon in your accent color'),
+  appleTouchIcon: asset.optional().describe('180x180 PNG for iOS home screens. Path or URL'),
+  ogImage: asset.optional().describe('Default social preview image (1200x630 works best)'),
+  twitter: z.string().regex(/^@?\w{1,15}$/).optional().describe('X/Twitter handle for twitter:site, e.g. "@personizely"'),
+  lang: z.string().default('en').describe('Language of the page, for <html lang> and og:locale'),
 
   font: z
     .union([
@@ -62,6 +65,9 @@ export const configSchema = z.object({
     .prefault({})
     .describe('Wording for entry types'),
 
+  perPage: z.number().int().min(5).max(200).default(20).describe('Entries per page on the public changelog'),
+  noindex: z.boolean().default(false).describe('Ask search engines not to index the site, e.g. for a staging deployment'),
+
   embed: z
     .object({
       title: z.string().default("What's new"),
@@ -93,6 +99,8 @@ export type ResolvedConfig = z.output<typeof configSchema> & {
   previewToken: string | null
   /** Folder the config was loaded relative to. */
   root: string
+  /** Folder of the config file (or cwd); file paths in the config resolve against it. */
+  configDir: string
 }
 
 /** Typed helper for releases.config.ts / .js. */
