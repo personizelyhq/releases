@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <rect width="1280" height="640" fill="#f4f5f8"/>
+  <rect x="80" y="70" width="1120" height="500" rx="18" fill="#fff" stroke="#e3e4ea"/>
+  <text x="130" y="140" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#17181c">Homepage hero test</text>
+  <text x="130" y="180" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#6b6e78">Primary metric: Profit per visitor</text>
+  <g font-family="Helvetica, Arial, sans-serif" font-size="22" fill="#3d3f47">
+    <text x="130" y="260">Control</text><rect x="330" y="236" width="520" height="34" rx="6" fill="#d9dcf5"/><text x="880" y="262" font-weight="700" fill="#17181c">$1.84</text>
+    <text x="130" y="340">Variant A, 15% off</text><rect x="330" y="316" width="430" height="34" rx="6" fill="#d9dcf5"/><text x="790" y="342" font-weight="700" fill="#17181c">$1.52</text>
+    <text x="130" y="420">Variant B, free gift</text><rect x="330" y="396" width="640" height="34" rx="6" fill="#2f54eb"/><text x="1000" y="422" font-weight="700" fill="#17181c">$2.27</text>
+  </g>
+  <text x="130" y="510" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#0d7f57">Variant B wins with 97% probability</text>
+</svg>

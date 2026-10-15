@@ -1,0 +1,43 @@
+{
+  "name": "@personizely/releases",
+  "version": "0.1.0",
+  "description": "Release notes from Markdown files: public changelog page, in-app embed and an unread-count API. Zero config.",
+  "type": "module",
+  "bin": {
+    "releases": "./bin/releases.js"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./src/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "node bin/releases.js dev --dir examples/releases",
+    "test": "node --test --no-warnings",
+    "check": "node bin/releases.js check --dir examples/releases"
+  },
+  "keywords": [
+    "changelog",
+    "release-notes",
+    "whats-new",
+    "markdown"
+  ],
+  "author": "Personizely",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "marked": "^15.0.12",
+    "yaml": "^2.9.1"
+  }
+}
