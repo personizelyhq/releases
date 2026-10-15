@@ -1,5 +1,8 @@
 # @personizely/releases
 
+[![npm](https://img.shields.io/npm/v/@personizely/releases)](https://www.npmjs.com/package/@personizely/releases)
+[![CI](https://github.com/personizelyhq/releases/actions/workflows/release.yml/badge.svg)](https://github.com/personizelyhq/releases/actions/workflows/release.yml)
+
 **A changelog you keep in Git, with a "What's new" panel and unread badge for your app.**
 
 Write release notes as Markdown files next to your code. One small Node server turns them into:
@@ -344,5 +347,21 @@ npm test           # vitest
 npm run typecheck
 npm run build      # dist/ via tsc
 ```
+
+### Releasing
+
+Publishing is automated by [`.github/workflows/release.yml`](.github/workflows/release.yml):
+
+```bash
+npm version minor          # or patch / major / prerelease --preid beta
+git push --follow-tags     # to main
+```
+
+When `main` has a version npm doesn't have yet, the workflow runs the tests on Node 22 and 24, publishes with [provenance](https://docs.npmjs.com/generating-provenance-statements), and creates the `vX.Y.Z` GitHub release with generated notes. Prerelease versions such as `1.0.0-beta.1` are published under the `next` tag. Pushing without a version bump only runs the tests.
+
+One-time setup:
+
+1. **First publish.** Trusted publishing can only be configured for a package that already exists. Either run `npm publish --access public` once from your machine, or add a granular npm token with publish rights as the `NPM_TOKEN` repository secret.
+2. **Trusted publishing.** On npmjs.com, open the package's **Settings > Trusted publishing**, add GitHub Actions with this repository and the workflow file `release.yml`, then delete the `NPM_TOKEN` secret. From then on there is no long-lived token to leak.
 
 MIT © Personizely
