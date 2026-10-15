@@ -1,43 +1,76 @@
 {
   "name": "@personizely/releases",
-  "version": "0.1.0",
-  "description": "Release notes from Markdown files: public changelog page, in-app embed and an unread-count API. Zero config.",
+  "version": "0.2.0",
+  "description": "Release notes from Markdown files: a public changelog, an in-app \"What's new\" embed and an unread-count API. Zero config.",
   "type": "module",
   "bin": {
-    "releases": "./bin/releases.js"
+    "releases": "./dist/cli.js"
   },
   "exports": {
-    ".": "./src/index.js",
-    "./client": "./src/client.js",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    },
+    "./schema.json": "./dist/schema.json",
     "./package.json": "./package.json"
   },
+  "types": "./dist/index.d.ts",
   "files": [
-    "bin",
-    "src",
+    "dist",
     "README.md",
     "LICENSE"
   ],
+  "sideEffects": false,
   "engines": {
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "node bin/releases.js dev --dir examples/releases",
-    "test": "node --test --no-warnings",
-    "check": "node bin/releases.js check --dir examples/releases"
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && node scripts/postbuild.mjs",
+    "dev": "tsx watch --include \"src/**\" src/cli.ts dev --cwd examples",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/cli.js serve --cwd examples",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run typecheck && npm test"
   },
   "keywords": [
     "changelog",
     "release-notes",
     "whats-new",
-    "markdown"
+    "product-updates",
+    "markdown",
+    "unread-badge",
+    "hono",
+    "sqlite"
   ],
   "author": "Personizely",
   "license": "MIT",
+  "homepage": "https://github.com/personizelyhq/releases#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/personizelyhq/releases.git"
+  },
+  "bugs": {
+    "url": "https://github.com/personizelyhq/releases/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "marked": "^15.0.12",
-    "yaml": "^2.9.1"
+    "@hono/node-server": "^2.1.5",
+    "hono": "^4.13.13",
+    "marked": "^18.1.1",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
   }
 }

@@ -1,3 +1,4 @@
+// @ts-check
 // Runs inside the /embed iframe. Token arrives in the URL hash so it never
 // reaches server logs or a Referer header.
 (function () {
@@ -17,6 +18,13 @@
     a.target = '_blank'
     a.rel = 'noopener'
   })
+
+  // Inside the host app's panel: show our own close button.
+  var closeBtn = /** @type {HTMLButtonElement | null} */ (document.querySelector('.embed-close'))
+  if (closeBtn && window.parent !== window) {
+    closeBtn.hidden = false
+    closeBtn.addEventListener('click', function () { post('close') })
+  }
 
   // Close on Escape so keyboard users can get back to the app.
   document.addEventListener('keydown', function (e) {

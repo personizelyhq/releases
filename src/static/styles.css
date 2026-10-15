@@ -1,43 +1,27 @@
 /* @personizely/releases — public page and in-app embed.
    Theme with --accent and --font from releases.config (injected inline). */
 
+/* Tokens. Every color is light-dark(light, dark); the config overrides them
+   inline, and [data-theme] forces a scheme (used by the embed). */
 :root {
+  color-scheme: light dark;
   --accent: #2f54eb;
   --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --paper: #fbfbfa;
-  --surface: #ffffff;
-  --ink: #17181c;
-  --ink-2: #3d3f47;
-  --muted: #6b6e78;
-  --rule: #e4e4e1;
-  --c-new: var(--accent);
-  --c-improved: #0d7f57;
-  --c-fixed: #a8530f;
+  --paper: light-dark(#fbfbfa, #121317);
+  --surface: light-dark(#ffffff, #1a1b20);
+  --ink: light-dark(#17181c, #ececef);
+  --ink-2: color-mix(in srgb, var(--ink) 80%, var(--paper));
+  --muted: light-dark(#6b6e78, #8d909b);
+  --rule: light-dark(#e4e4e1, #2a2c33);
+  /* Accent as text: lifted in dark mode so it stays readable. */
+  --accent-text: light-dark(var(--accent), color-mix(in srgb, var(--accent) 62%, white));
+  --c-new: var(--accent-text);
+  --c-improved: light-dark(#0d7f57, #3fc48f);
+  --c-fixed: light-dark(#a8530f, #e59a52);
   --radius: 10px;
-  color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #121317;
-    --surface: #1a1b20;
-    --ink: #ececef;
-    --ink-2: #c4c5cc;
-    --muted: #8d909b;
-    --rule: #2a2c33;
-    --c-new: color-mix(in srgb, var(--accent) 62%, white);
-    --c-improved: #3fc48f;
-    --c-fixed: #e59a52;
-    color-scheme: dark;
-  }
-}
-body[data-theme="light"] {
-  --paper: #ffffff; --surface: #ffffff; --ink: #17181c; --ink-2: #3d3f47; --muted: #6b6e78; --rule: #e8e8ec;
-  --c-new: var(--accent); --c-improved: #0d7f57; --c-fixed: #a8530f; color-scheme: light;
-}
-body[data-theme="dark"] {
-  --paper: #0f1115; --surface: #171a20; --ink: #ececef; --ink-2: #c4c5cc; --muted: #8d909b; --rule: #262a31;
-  --c-new: color-mix(in srgb, var(--accent) 62%, white); --c-improved: #3fc48f; --c-fixed: #e59a52; color-scheme: dark;
-}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -69,7 +53,12 @@ img { max-width: 100%; height: auto; }
   padding: 20px 24px;
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; letter-spacing: -0.01em; }
-.brand img { display: block; height: 28px; width: auto; }
+.brand img { display: block; height: var(--logo-h, 28px); width: auto; }
+.brand .logo-dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  .brand .logo-light:has(+ .logo-dark) { display: none; }
+  .brand .logo-dark { display: block; }
+}
 .home-link { color: var(--muted); text-decoration: none; font-size: 15px; }
 .home-link:hover { color: var(--ink); }
 
@@ -82,7 +71,7 @@ img { max-width: 100%; height: auto; }
   font-size: clamp(36px, 6vw, 56px);
   line-height: 1.04;
   letter-spacing: -0.035em;
-  font-weight: 650;
+  font-weight: 700;
 }
 .intro p { margin: 0; color: var(--ink-2); font-size: 18px; max-width: 34em; }
 
@@ -171,7 +160,7 @@ img { max-width: 100%; height: auto; }
   font-size: 24px;
   line-height: 1.25;
   letter-spacing: -0.02em;
-  font-weight: 620;
+  font-weight: 600;
   text-wrap: balance;
 }
 .entry-title a { text-decoration: none; }
@@ -199,7 +188,7 @@ h1.entry-title { font-size: clamp(30px, 4.6vw, 40px); line-height: 1.12; letter-
 .prose li { margin: 0.3em 0; }
 .prose li::marker { color: var(--muted); }
 .prose strong { color: var(--ink); font-weight: 600; }
-.prose a { color: var(--c-new); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.prose a { color: var(--accent-text); text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .prose img, .prose video { display: block; border-radius: var(--radius); border: 1px solid var(--rule); margin: 1.2em 0; }
 .prose code { font-size: 0.88em; background: color-mix(in srgb, var(--ink) 7%, transparent); padding: 0.1em 0.35em; border-radius: 4px; }
 .prose pre { background: var(--surface); border: 1px solid var(--rule); padding: 14px 16px; border-radius: 8px; overflow-x: auto; }
@@ -232,7 +221,7 @@ h1.entry-title { font-size: clamp(30px, 4.6vw, 40px); line-height: 1.12; letter-
   padding-top: 28px;
   border-top: 1px solid var(--rule);
 }
-.pager a { text-decoration: none; font-weight: 550; line-height: 1.35; }
+.pager a { text-decoration: none; font-weight: 600; line-height: 1.35; }
 .pager a span { display: block; color: var(--muted); font-size: 13px; font-weight: 500; margin-bottom: 4px; }
 .pager a:hover { color: var(--accent); }
 .pager .older { text-align: right; grid-column: 2; }
@@ -263,15 +252,20 @@ body.embed { background: var(--surface); font-size: 14px; line-height: 1.55; }
   top: 0;
   z-index: 1;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
   gap: 12px;
-  padding: 16px 20px 12px;
+  padding: 14px 20px 12px;
   background: var(--surface);
   border-bottom: 1px solid var(--rule);
 }
 .embed-head h1 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
-.embed-head a { color: var(--muted); font-size: 13px; text-decoration: none; }
+.embed-head a { margin-left: auto; color: var(--muted); font-size: 13px; text-decoration: none; }
+.embed-close {
+  width: 28px; height: 28px; margin: -6px -8px -6px 0; border: 0; border-radius: 6px;
+  background: transparent; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer;
+}
+.embed-close:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.embed-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
 .embed-head a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
 .embed-list { list-style: none; margin: 0; padding: 0; }

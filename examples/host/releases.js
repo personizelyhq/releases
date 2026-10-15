@@ -1,6 +1,5 @@
 // backend/assets/app/src/tools/releases.js
-// Drop-in replacement for tools/olvy.js. Keeps the same method names so
-// Default.vue only needs its import changed.
+// Replaces tools/olvy.js. Keeps the same method names so Default.vue barely changes.
 import { createReleases } from '@personizely/releases/client'
 
 export default {
@@ -15,6 +14,11 @@ export default {
 
   show () {
     this.client?.open()
+  },
+
+  /** Or skip the count plumbing entirely: releases.attach(bellElement) */
+  attach (el, opts) {
+    return this.client?.attach(el, opts)
   },
 
   onSeen (fn) {
