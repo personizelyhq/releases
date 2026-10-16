@@ -7,8 +7,9 @@ ARG RELEASES_VERSION=0.4.0
 RUN npm install -g @personizely/releases@${RELEASES_VERSION} && npm cache clean --force
 
 WORKDIR /app
+COPY releases.config.json ./
 COPY releases ./releases
-# Icons the releases config reuses from the app (paths relative to releases/)
+# Icons the config reuses from the app, at the same relative paths
 COPY public/favicon.ico ./public/favicon.ico
 COPY public/img/apple-touch-icon.png ./public/img/apple-touch-icon.png
 

@@ -49,7 +49,7 @@ Requires **Node 22.13+**. It uses the built-in `node:sqlite`, so there is nothin
 
 ```bash
 npm install --save-dev @personizely/releases
-npx releases init        # creates releases/ with a config and a first entry
+npx releases init        # creates releases.config.json and releases/ with a first entry
 npx releases dev         # preview with drafts and live reload
 ```
 
@@ -99,17 +99,18 @@ Run `npx releases check` in CI. It validates the config and every entry, reports
 
 ## Configuration
 
-Zero config works. To brand it, add `releases.config.json` inside `releases/`, or a `releases.config.{ts,js,json}` next to your `package.json`.
+Zero config works. To brand it, add a `releases.config.{json,ts,js}` at the root of your project, next to `package.json`, like a Tailwind or Vite config. (A config inside `releases/` also works, if you prefer to keep everything in one folder.)
 
 ```json
 {
-  "$schema": "../node_modules/@personizely/releases/dist/schema.json",
+  "$schema": "./node_modules/@personizely/releases/dist/schema.json",
   "name": "Personizely",
   "description": "New features, improvements and fixes in Personizely.",
   "website": { "label": "personizely.net", "href": "https://www.personizely.net" },
   "logo": { "light": "assets/logo.svg", "dark": "assets/logo-dark.svg" },
-  "favicon": "../public/favicon.ico",
-  "appleTouchIcon": "../public/img/apple-touch-icon.png",
+  "favicon": "./public/favicon.ico",
+  "appleTouchIcon": "./public/img/apple-touch-icon.png",
+  "dataDir": "./var/releases",
   "font": "Inter",
   "colors": {
     "accent": "#2f54eb",
@@ -123,7 +124,7 @@ Zero config works. To brand it, add `releases.config.json` inside `releases/`, o
 
 - a URL, e.g. `https://app.example.com/favicon.png`;
 - a file in `releases/assets/`, e.g. `assets/logo.svg`;
-- **a path to any file on disk, relative to the config file**, e.g. `../public/favicon.ico`. The server reads it and serves it itself, so your changelog uses your app's own favicon in dev and in production without depending on the app being up. A missing file fails at startup.
+- **a path to any file on disk, relative to the config file**, e.g. `./public/favicon.ico`. The server reads it and serves it itself, so your changelog uses your app's own favicon in dev and in production without depending on the app being up. A missing file fails at startup.
 
 Every path you write in the config file (`dir`, `dataDir`, icons) is relative to the config file itself, so it means the same thing wherever you run the command from.
 
@@ -166,7 +167,7 @@ Runtime settings come from the environment, which overrides the file:
 | `RELEASES_SECRET` | none | Turns on the API. At least 32 characters: `npx releases secret`. Never put it in the config file. |
 | `PORT`, `HOST` | `3000`, `0.0.0.0` | |
 | `RELEASES_DIR` | `./releases` | |
-| `DATA_DIR` | `./.data` | Where the SQLite file lives. **Use a persistent volume in production.** Can also be set as `dataDir` in the config, e.g. `"../var/releases"` to keep it in a framework's ignored `var/` or `storage/` folder. `releases dev` uses a `dev/` subfolder so local testing never touches it. |
+| `DATA_DIR` | `./.data` | Where the SQLite file lives. **Use a persistent volume in production.** Can also be set as `dataDir` in the config, e.g. `"./var/releases"` to keep it in a framework's ignored `var/` or `storage/` folder. `releases dev` uses a `dev/` subfolder so local testing never touches it. |
 | `PUBLIC_URL` | from the request | Same as `url`. |
 | `FRAME_ANCESTORS` | `*` | Who may embed the panel, e.g. `https://app.example.com`. Set it in production. |
 | `ALLOWED_ORIGINS` | `*` | CORS for the browser API. User tokens travel in a header, never a cookie, so `*` is safe. |
@@ -313,8 +314,9 @@ The server needs Node 22.13+, your `releases/` folder, and a persistent director
 FROM node:22-alpine
 RUN npm install -g @personizely/releases@0.4
 WORKDIR /app
+COPY releases.config.json ./
 COPY releases ./releases
-# Files the config points to outside releases/, at the same relative paths
+# Files the config points to, at the same relative paths
 COPY public/favicon.ico ./public/favicon.ico
 ENV NODE_ENV=production PORT=3000 DATA_DIR=/data
 RUN mkdir -p /data && chown node:node /data

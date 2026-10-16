@@ -10,7 +10,7 @@ description: Write release notes (changelog entries) for what shipped, from git 
 
 ## Overview
 
-Release notes are Markdown files in `<RELEASES_DIR, e.g. releases/>`, served by `@personizely/releases` as the public changelog and the in-app "What's new" panel. One file per customer-visible change. A release note ships like code: you write drafts, the user reviews, a merge publishes.
+Release notes are Markdown files in `<RELEASES_DIR, e.g. releases/>` (settings in `releases.config.json` at the project root), served by `@personizely/releases` as the public changelog and the in-app "What's new" panel. One file per customer-visible change. A release note ships like code: you write drafts, the user reviews, a merge publishes.
 
 Preview while writing: `npx releases dev` and open http://localhost:3000. Drafts and internal entries are visible there.
 

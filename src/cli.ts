@@ -96,12 +96,14 @@ try {
     case 'init': {
       const dir = resolve(cwd, values.dir ?? 'releases')
       await mkdir(join(dir, 'assets'), { recursive: true })
-      const configFile = join(dir, 'releases.config.json')
+      const configFile = join(cwd, 'releases.config.json')
       if (!existsSync(configFile)) {
+        const relDir = relative(cwd, dir) || '.'
         await writeFile(configFile, JSON.stringify({
-          $schema: '../node_modules/@personizely/releases/dist/schema.json',
+          $schema: './node_modules/@personizely/releases/dist/schema.json',
           name: 'Your product',
           description: 'New features, improvements and fixes.',
+          ...(relDir !== 'releases' ? { dir: `./${relDir}` } : {}),
           colors: { accent: '#2f54eb' },
         }, null, 2) + '\n')
       }
