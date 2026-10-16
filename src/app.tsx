@@ -140,7 +140,10 @@ export async function createApp (inputCfg: ResolvedConfig, opts: AppOptions = {}
   app.get('/robots.txt', c => c.text(robots(cfg, c.var.page.baseUrl), 200, { 'Cache-Control': 'public, max-age=3600' }))
   app.get('/sitemap.xml', c => c.body(sitemap(cfg, c.var.page.baseUrl, releases.list()), 200, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }))
 
-  app.get('/_releases/:file', c => serveFile(c, STATIC_DIR, c.req.param('file'), dev ? 'no-cache' : 'public, max-age=31536000, immutable'))
+  // Hashed URLs (see assets.ts) never change content, so they can be cached for a year.
+  // The hash is not checked: an old page asking for an old hash gets the current file.
+  app.get('/_releases/:hash{[0-9a-f]{10}}/:file', c => serveFile(c, STATIC_DIR, c.req.param('file'), dev ? 'no-cache' : 'public, max-age=31536000, immutable'))
+  app.get('/_releases/:file', c => serveFile(c, STATIC_DIR, c.req.param('file'), dev ? 'no-cache' : 'public, max-age=300'))
   app.get('/assets/*', c => serveFile(c, join(cfg.dir, 'assets'), c.req.path.slice('/assets/'.length), dev ? 'no-cache' : 'public, max-age=86400'))
 
   app.get('/feed.xml', c => {

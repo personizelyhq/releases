@@ -143,6 +143,12 @@ describe('server', () => {
     expect((await s.req('/assets/a.png')).status).toBe(200)
     expect((await s.req('/assets/..%2F2026-05-01-may.md')).status).toBe(404)
     expect((await s.req('/_releases/styles.css')).status).toBe(200)
+    const html = await (await s.req('/')).text()
+    const href = html.match(/href="(\/_releases\/[0-9a-f]{10}\/styles\.css)"/)?.[1]
+    expect(href).toBeTruthy()
+    const css = await s.req(href!)
+    expect(css.status).toBe(200)
+    expect(css.headers.get('cache-control')).toContain('immutable')
     const json = await (await s.req('/releases.json')).json() as { releases: { slug: string }[] }
     expect(json.releases.map(r => r.slug)).toEqual(['quiet-fix', 'sept', 'may'])
   })

@@ -1,6 +1,6 @@
 {
   "name": "@personizely/releases",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Release notes from Markdown files: a public changelog, an in-app \"What's new\" embed and an unread-count API. Zero config.",
   "type": "module",
   "bin": {
