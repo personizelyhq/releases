@@ -1,13 +1,12 @@
 name: Release
 
-# Bump "version" in package.json and push to main (or master). If npm doesn't have that
-# version yet, this tests, publishes to npm with provenance, tags vX.Y.Z and
-# creates a GitHub release. Versions like 1.0.0-beta.1 go to the "next" tag.
+# Publishes to npm when a GitHub release is published, like our other packages.
+# Tag the release with the bare version (0.5.2, no "v"); it must match package.json.
+# Prereleases (1.0.0-beta.1) go to the "next" dist-tag.
 
 on:
-  push:
-    branches: [main, master]
-  workflow_dispatch:
+  release:
+    types: [published]
 
 concurrency:
   group: release
@@ -24,7 +23,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     permissions:
-      contents: write # create the tag and GitHub release
+      contents: read
       id-token: write # npm trusted publishing and provenance
     steps:
       - uses: actions/checkout@v7
@@ -38,36 +37,22 @@ jobs:
       # Trusted publishing (OIDC) needs npm 11.5.1 or newer.
       - run: npm install -g npm@latest
 
-      - name: Check whether this version is already on npm
+      - name: Check the tag matches package.json
         id: version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
         run: |
-          NAME=$(node -p "require('./package.json').name")
           VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          case "$VERSION" in *-*) echo "dist_tag=next" >> "$GITHUB_OUTPUT" ;; *) echo "dist_tag=latest" >> "$GITHUB_OUTPUT" ;; esac
-          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
-            echo "publish=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::$NAME@$VERSION is already on npm. Bump the version in package.json to release."
-          else
-            echo "publish=true" >> "$GITHUB_OUTPUT"
+          if [ "${TAG#v}" != "$VERSION" ]; then
+            echo "::error::Release tag $TAG does not match package.json version $VERSION. Bump package.json or fix the tag."
+            exit 1
           fi
+          case "$VERSION" in *-*) echo "dist_tag=next" >> "$GITHUB_OUTPUT" ;; *) echo "dist_tag=latest" >> "$GITHUB_OUTPUT" ;; esac
 
-      - if: steps.version.outputs.publish == 'true'
-        run: npm ci
+      - run: npm ci
 
       # prepack builds dist/; prepublishOnly runs typecheck and tests once more.
-      - if: steps.version.outputs.publish == 'true'
-        run: npm publish --provenance --access public --tag ${{ steps.version.outputs.dist_tag }}
+      - run: npm publish --provenance --access public --tag ${{ steps.version.outputs.dist_tag }}
         env:
           # Only needed until trusted publishing is set up on npmjs.com (see README).
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - if: steps.version.outputs.publish == 'true'
-        name: Tag and create the GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          PRERELEASE=""
-          case "$VERSION" in *-*) PRERELEASE="--prerelease" ;; esac
-          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes $PRERELEASE

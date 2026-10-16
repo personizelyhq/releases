@@ -1,7 +1,7 @@
 # @personizely/releases
 
 [![npm](https://img.shields.io/npm/v/@personizely/releases)](https://www.npmjs.com/package/@personizely/releases)
-[![CI](https://github.com/personizelyhq/releases/actions/workflows/release.yml/badge.svg)](https://github.com/personizelyhq/releases/actions/workflows/release.yml)
+[![CI](https://github.com/personizelyhq/releases/actions/workflows/ci.yml/badge.svg)](https://github.com/personizelyhq/releases/actions/workflows/ci.yml)
 
 **A changelog you keep in Git, with a "What's new" panel and unread badge for your app.**
 
@@ -386,14 +386,15 @@ npm run build      # dist/ via tsc
 
 ### Releasing
 
-Publishing is automated by [`.github/workflows/release.yml`](.github/workflows/release.yml):
+Publishing is automated by [`.github/workflows/release.yml`](.github/workflows/release.yml) and runs when a GitHub release is published:
 
 ```bash
-npm version minor          # or patch / major / prerelease --preid beta
-git push --follow-tags     # to main or master
+npm version minor          # or patch / major / prerelease --preid beta; tags 0.6.0 (no "v", see .npmrc)
+git push --follow-tags
+gh release create 0.6.0 --generate-notes   # or draft the release on GitHub and publish it there
 ```
 
-When the default branch (`main` or `master`) has a version npm doesn't have yet, the workflow runs the tests on Node 22 and 24, publishes with [provenance](https://docs.npmjs.com/generating-provenance-statements), and creates the `vX.Y.Z` GitHub release with generated notes. Prerelease versions such as `1.0.0-beta.1` are published under the `next` tag. Pushing without a version bump only runs the tests.
+The workflow checks that the release tag matches `package.json`, runs the tests on Node 22 and 24, and publishes with [provenance](https://docs.npmjs.com/generating-provenance-statements). Prerelease versions such as `1.0.0-beta.1` are published under the `next` tag. Pushes and pull requests only run the tests.
 
 One-time setup:
 
