@@ -125,6 +125,8 @@ Zero config works. To brand it, add `releases.config.json` inside `releases/`, o
 - a file in `releases/assets/`, e.g. `assets/logo.svg`;
 - **a path to any file on disk, relative to the config file**, e.g. `../public/favicon.ico`. The server reads it and serves it itself, so your changelog uses your app's own favicon in dev and in production without depending on the app being up. A missing file fails at startup.
 
+Every path you write in the config file (`dir`, `dataDir`, icons) is relative to the config file itself, so it means the same thing wherever you run the command from.
+
 The `$schema` line gives you autocomplete and validation in VS Code and JetBrains. In TypeScript:
 
 ```ts
@@ -164,7 +166,7 @@ Runtime settings come from the environment, which overrides the file:
 | `RELEASES_SECRET` | none | Turns on the API. At least 32 characters: `npx releases secret`. Never put it in the config file. |
 | `PORT`, `HOST` | `3000`, `0.0.0.0` | |
 | `RELEASES_DIR` | `./releases` | |
-| `DATA_DIR` | `./.data` | Where the SQLite file lives. **Use a persistent volume in production.** |
+| `DATA_DIR` | `./.data` | Where the SQLite file lives. **Use a persistent volume in production.** Can also be set as `dataDir` in the config, e.g. `"../var/releases"` to keep it in a framework's ignored `var/` or `storage/` folder. `releases dev` uses a `dev/` subfolder so local testing never touches it. |
 | `PUBLIC_URL` | from the request | Same as `url`. |
 | `FRAME_ANCESTORS` | `*` | Who may embed the panel, e.g. `https://app.example.com`. Set it in production. |
 | `ALLOWED_ORIGINS` | `*` | CORS for the browser API. User tokens travel in a header, never a cookie, so `*` is safe. |

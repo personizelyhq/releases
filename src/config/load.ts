@@ -46,9 +46,11 @@ export async function loadConfig (cwd = process.cwd(), env: Env = process.env, o
   if (previewToken && previewToken.length < 16) throw new ConfigError('PREVIEW_TOKEN must be at least 16 characters.')
   if (secret && secret.length < 32) throw new ConfigError('RELEASES_SECRET must be at least 32 characters. Generate one with: npx releases secret')
 
-  // Paths in the config file are relative to the file; paths from env or flags to cwd.
-  const dirBase = env.RELEASES_DIR || overrides.dir ? cwd : root
-  const dataBase = env.DATA_DIR ? cwd : root
+  // Paths written in the config file resolve against the file; paths from env, flags
+  // and defaults against cwd (so the default .data never lands inside releases/).
+  const configDir = found?.root ?? cwd
+  const dirBase = env.RELEASES_DIR || overrides.dir ? cwd : found?.config.dir !== undefined ? configDir : root
+  const dataBase = env.DATA_DIR || overrides.dataDir ? cwd : found?.config.dataDir !== undefined ? configDir : root
   return {
     ...parsed.data,
     url: parsed.data.url?.replace(/\/+$/, ''),
@@ -57,7 +59,7 @@ export async function loadConfig (cwd = process.cwd(), env: Env = process.env, o
     secret,
     previewToken,
     root,
-    configDir: found?.root ?? cwd,
+    configDir,
   }
 }
 

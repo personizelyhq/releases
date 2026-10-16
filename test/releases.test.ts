@@ -75,6 +75,14 @@ describe('config', () => {
     expect(cfg).toMatchObject({ name: 'Acme', font: 'Inter', port: 5000, url: 'https://r.acme.com', dir: join(cwd, 'releases'), dataDir: join(cwd, '.data') })
   })
 
+  it('resolves dataDir from the config file against the file, env against cwd', async () => {
+    const cwd = await tmp()
+    await mkdir(join(cwd, 'releases'))
+    await writeFile(join(cwd, 'releases', 'releases.config.json'), JSON.stringify({ dataDir: '../var/releases' }))
+    expect((await loadConfig(cwd, {})).dataDir).toBe(join(cwd, 'var', 'releases'))
+    expect((await loadConfig(cwd, { DATA_DIR: 'tmp/data' })).dataDir).toBe(join(cwd, 'tmp', 'data'))
+  })
+
   it('explains invalid values and refuses a secret in the file', async () => {
     const cwd = await tmp()
     await writeFile(join(cwd, 'releases.config.json'), JSON.stringify({ colors: { accent: 'blue; }' } }))
