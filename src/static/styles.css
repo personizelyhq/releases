@@ -133,7 +133,8 @@ img { max-width: 100%; height: auto; }
 .entry-node::after {
   content: "";
   position: absolute;
-  left: 8px;
+  /* centred on the rail: rail at 114px (1px wide) minus the node column's 100px offset, minus half the 9px dot */
+  left: 10px;
   top: 8px;
   width: 9px;
   height: 9px;
@@ -235,7 +236,7 @@ h1.entry-title { font-size: clamp(30px, 4.6vw, 40px); line-height: 1.12; letter-
   .timeline::before { left: 4px; }
   .entry { grid-template-columns: 24px minmax(0, 1fr); column-gap: 0; padding-bottom: 44px; }
   .entry-node { grid-row: 1 / span 2; grid-column: 1; }
-  .entry-node::after { left: -1px; top: 4px; }
+  .entry-node::after { left: 0; top: 4px; }
   .entry-date { grid-column: 2; text-align: left; padding: 0 0 6px; }
   .entry-date .d { display: inline; font-size: 14px; color: var(--muted); font-weight: 500; }
   .entry-body { grid-column: 2; }
