@@ -1,12 +1,12 @@
 name: Release
 
-# Bump "version" in package.json and push to main. If npm doesn't have that
+# Bump "version" in package.json and push to main (or master). If npm doesn't have that
 # version yet, this tests, publishes to npm with provenance, tags vX.Y.Z and
 # creates a GitHub release. Versions like 1.0.0-beta.1 go to the "next" tag.
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
 
 concurrency:

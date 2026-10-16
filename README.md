@@ -390,10 +390,10 @@ Publishing is automated by [`.github/workflows/release.yml`](.github/workflows/r
 
 ```bash
 npm version minor          # or patch / major / prerelease --preid beta
-git push --follow-tags     # to main
+git push --follow-tags     # to main or master
 ```
 
-When `main` has a version npm doesn't have yet, the workflow runs the tests on Node 22 and 24, publishes with [provenance](https://docs.npmjs.com/generating-provenance-statements), and creates the `vX.Y.Z` GitHub release with generated notes. Prerelease versions such as `1.0.0-beta.1` are published under the `next` tag. Pushing without a version bump only runs the tests.
+When the default branch (`main` or `master`) has a version npm doesn't have yet, the workflow runs the tests on Node 22 and 24, publishes with [provenance](https://docs.npmjs.com/generating-provenance-statements), and creates the `vX.Y.Z` GitHub release with generated notes. Prerelease versions such as `1.0.0-beta.1` are published under the `next` tag. Pushing without a version bump only runs the tests.
 
 One-time setup:
 
