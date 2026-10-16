@@ -14,7 +14,7 @@ Write release notes as Markdown files next to your code. One small Node server t
 
 No dashboard, no editor, no SaaS seat. A release note is a pull request.
 
-![Changelog page and in-app panel](https://raw.githubusercontent.com/personizelyhq/releases/main/docs/screenshot.png)
+![Changelog page and in-app panel](https://raw.githubusercontent.com/personizelyhq/releases/HEAD/docs/screenshot.png)
 
 ```bash
 npx @personizely/releases init
@@ -312,7 +312,7 @@ The server needs Node 22.13+, your `releases/` folder, and a persistent director
 
 ```dockerfile
 FROM node:22-alpine
-RUN npm install -g @personizely/releases@0.4
+RUN npm install -g @personizely/releases@0.5
 WORKDIR /app
 COPY releases.config.json ./
 COPY releases ./releases
