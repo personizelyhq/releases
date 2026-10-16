@@ -83,6 +83,12 @@ describe('config', () => {
     expect((await loadConfig(cwd, { DATA_DIR: 'tmp/data' })).dataDir).toBe(join(cwd, 'tmp', 'data'))
   })
 
+  it('accepts RELEASES_-prefixed env names, which win over the generic ones', async () => {
+    const cfg = await loadConfig(await tmp(), { PORT: '8080', RELEASES_PORT: '4100', RELEASES_PUBLIC_URL: 'https://r.acme.com' })
+    expect(cfg.port).toBe(4100)
+    expect(cfg.url).toBe('https://r.acme.com')
+  })
+
   it('explains invalid values and refuses a secret in the file', async () => {
     const cwd = await tmp()
     await writeFile(join(cwd, 'releases.config.json'), JSON.stringify({ colors: { accent: 'blue; }' } }))

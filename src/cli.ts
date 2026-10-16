@@ -70,6 +70,26 @@ if (!cmd || values.help) {
   process.exit(cmd ? 0 : 1)
 }
 
+// Pick up RELEASES_* settings from the project's .env files (e.g. the same RELEASES_SECRET
+// your app uses). Only that prefix is read, and real environment variables always win.
+{
+  const { readFileSync, existsSync: exists } = await import('node:fs')
+  const { parseEnv } = await import('node:util')
+  const fromFiles: Record<string, string> = {}
+  for (const file of ['.env', '.env.local']) { // later files win, like Symfony and Vite
+    const path = join(cwd, file)
+    if (!exists(path)) continue
+    try {
+      for (const [key, value] of Object.entries(parseEnv(readFileSync(path, 'utf8')))) {
+        if (key.startsWith('RELEASES_') && value) fromFiles[key] = value
+      }
+    } catch {
+      // A .env we can't parse is not ours to complain about.
+    }
+  }
+  for (const [key, value] of Object.entries(fromFiles)) process.env[key] ??= value
+}
+
 const { loadConfig } = await import('./config/load.js')
 const today = () => new Date().toISOString().slice(0, 10)
 

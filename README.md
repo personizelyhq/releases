@@ -160,7 +160,7 @@ export default defineConfig({
 | `labels` | `New feature`, `Improvement`, `Fix` | Wording for each type. |
 | `embed` | `{ title: "What's new", limit: 30 }` | In-app panel heading and number of entries. |
 
-Runtime settings come from the environment, which overrides the file:
+Runtime settings come from the environment, which overrides the file. The CLI also reads `RELEASES_*` variables from `.env` and `.env.local` in the project folder (`.env.local` wins, real environment variables win over both), so a server running inside your app's repo shares its `RELEASES_SECRET` with no extra setup. Every variable below also works with a `RELEASES_` prefix (`RELEASES_PORT`, `RELEASES_DATA_DIR`, ...), which takes precedence, for apps whose own `.env` already uses names like `PORT`.
 
 | Variable | Default | |
 |---|---|---|

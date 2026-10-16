@@ -16,7 +16,15 @@ type Env = Record<string, string | undefined>
  * releases folder, then applies environment variables (env always wins, so a
  * deployment can override anything without touching the repo).
  */
-export async function loadConfig (cwd = process.cwd(), env: Env = process.env, overrides: Partial<UserConfig> = {}): Promise<ResolvedConfig> {
+/** Every setting can also be given with a RELEASES_ prefix, which wins (handy inside an app whose own .env already uses PORT or HOST). */
+const ENV_NAMES = ['DIR', 'DATA_DIR', 'PORT', 'HOST', 'PUBLIC_URL', 'ALLOWED_ORIGINS', 'FRAME_ANCESTORS', 'PREVIEW_TOKEN'] as const
+
+export async function loadConfig (cwd = process.cwd(), rawEnv: Env = process.env, overrides: Partial<UserConfig> = {}): Promise<ResolvedConfig> {
+  const env: Env = { ...rawEnv }
+  for (const name of ENV_NAMES) {
+    const prefixed = rawEnv[`RELEASES_${name}`]
+    if (prefixed) env[name === 'DIR' ? 'RELEASES_DIR' : name] = prefixed
+  }
   const guessDir = resolve(cwd, overrides.dir ?? env.RELEASES_DIR ?? './releases')
   const atRoot = await findConfig(cwd)
   const found = atRoot ?? (await findConfig(guessDir))
