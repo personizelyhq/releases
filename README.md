@@ -386,19 +386,19 @@ npm run build      # dist/ via tsc
 
 ### Releasing
 
-Publishing is automated by [`.github/workflows/release.yml`](.github/workflows/release.yml) and runs when a GitHub release is published:
+Releases are cut by the manually run [`.github/workflows/release.yml`](.github/workflows/release.yml), from the Actions tab (**Release > Run workflow**) or with:
 
 ```bash
-npm version minor          # or patch / major / prerelease --preid beta; tags 0.6.0 (no "v", see .npmrc)
-git push --follow-tags
-gh release create 0.6.0 --generate-notes   # or draft the release on GitHub and publish it there
+gh workflow run release.yml -f bump=minor   # or patch / major; optional -f title="..."
 ```
 
-The workflow checks that the release tag matches `package.json`, runs the tests on Node 22 and 24, and publishes with [provenance](https://docs.npmjs.com/generating-provenance-statements). Prerelease versions such as `1.0.0-beta.1` are published under the `next` tag. Pushes and pull requests only run the tests.
+It runs the tests on Node 22 and 24, bumps `package.json`, commits and tags the bare version (`0.6.0`, no "v"), publishes with [provenance](https://docs.npmjs.com/generating-provenance-statements) and creates the GitHub release with generated notes. If the npm publish fails, fix the cause and run it again with `bump=none`: it publishes the version that is already tagged. For a prerelease, set the version by hand (`npm version prerelease --preid beta`, push the commit and tag), then run it with `bump=none`; versions such as `1.0.0-beta.1` are published under the `next` tag. Pushes and pull requests only run the tests.
+
+[`.github/workflows/npm-publish.yml`](.github/workflows/npm-publish.yml) is a fallback that publishes when a release is published by hand on GitHub (the tag must match `package.json`). Releases created by the Release workflow do not trigger it.
 
 One-time setup:
 
 1. **First publish.** Trusted publishing can only be configured for a package that already exists. Either run `npm publish --access public` once from your machine, or add a granular npm token with publish rights as the `NPM_TOKEN` repository secret.
-2. **Trusted publishing.** On npmjs.com, open the package's **Settings > Trusted publishing**, add GitHub Actions with this repository and the workflow file `release.yml`, then delete the `NPM_TOKEN` secret. From then on there is no long-lived token to leak.
+2. **Trusted publishing.** On npmjs.com, open the package's **Settings > Trusted publishing**, add GitHub Actions with this repository and the workflow file `release.yml`. The Release workflow uses no token. Only the fallback still needs the `NPM_TOKEN` secret; delete it if you do not need the fallback, and there is no long-lived token to leak.
 
 MIT © Personizely

@@ -1,0 +1,60 @@
+name: Publish (fallback)
+
+# Fallback publish: runs when a release is published by hand in GitHub. Releases
+# created by the Release workflow do not trigger it, because GITHUB_TOKEN events
+# start no workflows; to retry a failed publish there, run Release with bump "none".
+# Tag the release with the bare version (0.5.2, no "v"); it must match package.json.
+# Prereleases (1.0.0-beta.1) go to the "next" dist-tag.
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing and provenance
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      # Trusted publishing (OIDC) needs npm 11.5.1 or newer.
+      - run: npm install -g npm@latest
+
+      - name: Check the tag matches package.json
+        id: version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "${TAG#v}" != "$VERSION" ]; then
+            echo "::error::Release tag $TAG does not match package.json version $VERSION. Bump package.json or fix the tag."
+            exit 1
+          fi
+          case "$VERSION" in *-*) echo "dist_tag=next" >> "$GITHUB_OUTPUT" ;; *) echo "dist_tag=latest" >> "$GITHUB_OUTPUT" ;; esac
+
+      - run: npm ci
+
+      # prepack builds dist/; prepublishOnly runs typecheck and tests once more.
+      - run: npm publish --provenance --access public --tag ${{ steps.version.outputs.dist_tag }}
+        env:
+          # Only needed until trusted publishing is set up on npmjs.com (see README).
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
